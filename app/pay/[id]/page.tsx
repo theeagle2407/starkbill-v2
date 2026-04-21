@@ -3,7 +3,9 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import { supabase } from '@/lib/supabase';
+import { getSupabase } from '@/lib/supabase';
+
+const supabase = getSupabase();
 import { payWithStarkzap } from '@/lib/starkzap';
 
 const CORAL = '#EC796B';
