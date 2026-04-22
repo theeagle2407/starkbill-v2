@@ -1,62 +1,34 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createInvoice } from '@/lib/invoices-store';
+import { v4 as uuidv4 } from 'uuid';
 
-// ✅ SERVER-SIDE CLIENT (secure)
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+export async function POST(req: NextRequest) {
+  try {
+    const body = await req.json();
 
-// ✅ GET SINGLE INVOICE
-export async function GET(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  const { id } = params;
+    const id = body.id || uuidv4();
 
-  const { data, error } = await supabase
-    .from('invoices')
-    .select('*')
-    .eq('id', id)
-    .single();
+    const invoice = createInvoice({
+      id,
+      invoiceNumber: body.invoiceNumber,
+      senderName: body.senderName,
+      senderEmail: body.senderEmail,
+      senderWallet: body.senderWallet,
+      clientName: body.clientName,
+      clientEmail: body.clientEmail,
+      items: body.items,
+      currency: body.currency,
+      total: body.total,
+      dueDate: body.dueDate,
+      notes: body.notes,
+      status: 'pending',
+    });
 
-  if (error || !data) {
+    return NextResponse.json({ success: true, invoice });
+  } catch (err: any) {
     return NextResponse.json(
-      { error: 'Invoice not found' },
-      { status: 404 }
-    );
-  }
-
-  return NextResponse.json(data);
-}
-
-// ✅ UPDATE INVOICE (after payment)
-export async function PATCH(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  const { id } = params;
-  const body = await req.json();
-
-  const { status, tx_hash } = body;
-
-  const { data, error } = await supabase
-    .from('invoices')
-    .update({
-      status,
-      tx_hash,
-      paid_at: new Date().toISOString(),
-    })
-    .eq('id', id)
-    .select()
-    .single();
-
-  if (error) {
-    return NextResponse.json(
-      { error: 'Failed to update invoice' },
+      { success: false, error: err.message },
       { status: 500 }
     );
   }
-
-  return NextResponse.json(data);
 }

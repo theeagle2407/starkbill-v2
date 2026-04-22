@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
+import { getInvoice } from '@/lib/invoices-store';
 import { payWithStarkzap } from '@/lib/starkzap';
 
 const CORAL = '#EC796B';
@@ -14,10 +15,17 @@ const CARD = 'rgba(255,255,255,0.04)';
 
 type Invoice = {
   id: string;
-  amount: string;
+  invoiceNumber: string;
+  senderName: string;
+  senderEmail: string;
+  senderWallet: string;
+  clientName: string;
+  clientEmail: string;
+  items: any[];
   currency: string;
-  token_address: string;
-  recipient: string;
+  total: number;
+  dueDate: string;
+  notes?: string;
   status: string;
   tx_hash?: string;
 };
@@ -31,29 +39,28 @@ export default function PayPage() {
   const [loading, setLoading] = useState(false);
   const [status, setStatus] =
     useState<'idle' | 'success' | 'failed'>('idle');
-  const [txHash, setTxHash] = useState<string | null>(null);
 
+  const [txHash, setTxHash] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
-  // ✅ FETCH FROM API (NOT SUPABASE)
+  // ✅ LOAD INVOICE (NO SUPABASE)
   useEffect(() => {
-    const loadInvoice = async () => {
+    const load = async () => {
       setLoadingInvoice(true);
 
-      try {
-        const res = await fetch(`/api/invoices/${id}`);
-        if (!res.ok) throw new Error();
+      const data = getInvoice(id as string);
 
-        const data = await res.json();
-        setInvoice(data);
-      } catch {
+      if (!data) {
         setInvoice(null);
+        setLoadingInvoice(false);
+        return;
       }
 
+      setInvoice(data as any);
       setLoadingInvoice(false);
     };
 
-    loadInvoice();
+    load();
   }, [id]);
 
   const paymentLink =
@@ -73,9 +80,9 @@ export default function PayPage() {
     setStatus('idle');
 
     const result = await payWithStarkzap({
-      amount: invoice.amount,
-      tokenAddress: invoice.token_address,
-      recipient: invoice.recipient,
+      amount: String(invoice.total),
+      tokenAddress: invoice.senderWallet, // adjust if you later store token separately
+      recipient: invoice.senderWallet,
       decimals: invoice.currency === 'USDC' ? 6 : 18,
     });
 
@@ -88,22 +95,12 @@ export default function PayPage() {
     setTxHash(result.txHash);
     setStatus('success');
 
-    // ✅ UPDATE VIA API (NOT SUPABASE)
-    await fetch(`/api/invoices/${invoice.id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        status: 'paid',
-        tx_hash: result.txHash,
-      }),
-    });
-
     setLoading(false);
   };
 
   return (
     <div style={{ minHeight: '100vh', background: '#0A0A0F', color: TEXT }}>
-      
+
       {/* HEADER */}
       <header style={{
         padding: '20px 40px',
@@ -129,8 +126,8 @@ export default function PayPage() {
 
         <div style={{
           background: CARD,
-          border: `1px solid ${BORDER}`,
           borderRadius: '16px',
+          border: `1px solid ${BORDER}`,
           padding: '28px'
         }}>
 
@@ -160,7 +157,7 @@ export default function PayPage() {
               </div>
 
               <div style={{ fontSize: '22px', fontWeight: 800 }}>
-                {invoice.amount} {invoice.currency}
+                {invoice.total} {invoice.currency}
               </div>
 
               <div style={{ marginTop: '10px', fontSize: '12px', color: MUTED }}>
@@ -169,11 +166,7 @@ export default function PayPage() {
 
               {/* COPY LINK */}
               <div style={{ marginTop: '20px' }}>
-                <div style={{
-                  fontSize: '12px',
-                  color: MUTED,
-                  marginBottom: '6px'
-                }}>
+                <div style={{ fontSize: '12px', color: MUTED, marginBottom: '6px' }}>
                   Payment link
                 </div>
 
