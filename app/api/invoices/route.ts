@@ -1,21 +1,20 @@
 import { NextResponse } from 'next/server';
-import { getInvoice } from '@/lib/invoice-store';
+import { createInvoice, getInvoice } from '@/lib/invoice-store';
 
-export async function GET(
-  req: Request,
-  context: { params: { id: string } }
-) {
-  const invoice = getInvoice(context.params.id);
+export async function POST(req: Request) {
+  try {
+    const body = await req.json();
 
-  if (!invoice) {
+    const invoice = createInvoice({
+      ...body,
+      status: 'pending',
+    });
+
+    return NextResponse.json({ success: true, invoice });
+  } catch (err) {
     return NextResponse.json(
-      { success: false, error: 'Invoice not found' },
-      { status: 404 }
+      { success: false, error: 'Failed to create invoice' },
+      { status: 500 }
     );
   }
-
-  return NextResponse.json({
-    success: true,
-    invoice,
-  });
 }
