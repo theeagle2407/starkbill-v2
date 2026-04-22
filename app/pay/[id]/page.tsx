@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import { getInvoice } from '@/lib/invoices-store';
+import { getInvoice, createInvoice } from '@/lib/invoice-store';
 import { payWithStarkzap } from '@/lib/starkzap';
 
 const CORAL = '#EC796B';
