@@ -36,30 +36,73 @@ export default function NewInvoicePage() {
   };
 
   const handleSubmit = async () => {
-    if (!senderName || !senderEmail || !senderWallet || !clientName || !clientEmail || !dueDate) {
-      setError('Please fill in all required fields.');
-      return;
-    }
-    if (items.some(i => !i.description || i.quantity <= 0 || i.unitPrice <= 0)) {
-      setError('Please complete all line items.');
-      return;
-    }
-    setError('');
-    setSubmitting(true);
+  if (
+    !senderName ||
+    !senderEmail ||
+    !senderWallet ||
+    !clientName ||
+    !clientEmail ||
+    !dueDate
+  ) {
+    setError('Please fill in all required fields.');
+    return;
+  }
+
+  if (items.some(i => !i.description || i.quantity <= 0 || i.unitPrice <= 0)) {
+    setError('Please complete all line items.');
+    return;
+  }
+
+  setSubmitting(true);
+  setError('');
+
+  try {
+    const invoiceId = 'inv_' + Math.random().toString(36).substring(2, 10);
+
+    const totalAmount = items.reduce(
+      (s, i) => s + i.quantity * i.unitPrice,
+      0
+    );
+
+    const invoiceNumber = `INV-${Math.floor(1000 + Math.random() * 9000)}`;
+
+    const res = await fetch('/api/invoices', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id: invoiceId,
+        invoiceNumber,
+        senderName,
+        senderEmail,
+        senderWallet,
+        clientName,
+        clientEmail,
+        items,
+        currency,
+        total: totalAmount,
+        dueDate,
+        notes,
+      }),
+    });
+
+    // ✅ SAFE JSON HANDLING
+    let data;
     try {
-      const res = await fetch('/api/invoices', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ senderName, senderEmail, senderWallet, clientName, clientEmail, items, currency, dueDate, notes }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
-      router.push(`/pay/${data.invoice.id}?created=true`);
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to create invoice');
-      setSubmitting(false);
+      data = await res.json();
+    } catch (e) {
+      throw new Error('Server did not return JSON');
     }
-  };
+
+    if (!res.ok || !data.success) {
+      throw new Error(data?.error || 'Failed to create invoice');
+    }
+
+    router.push(`/pay/${invoiceId}`);
+  } catch (err: any) {
+    setError(err.message || 'Failed to create invoice');
+    setSubmitting(false);
+  }
+}
 
   const inp: React.CSSProperties = {
     width: '100%',

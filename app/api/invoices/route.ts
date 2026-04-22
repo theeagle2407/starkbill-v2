@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createInvoice } from '@/lib/invoices-store';
-import { v4 as uuidv4 } from 'uuid';
 
-export async function GET(req: NextRequest) {
+export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
 
-    const id = body.id || uuidv4();
+    const id = body.id;
 
     const invoice = createInvoice({
       id,
@@ -24,10 +23,17 @@ export async function GET(req: NextRequest) {
       status: 'pending',
     });
 
-    return NextResponse.json({ success: true, invoice });
+    return NextResponse.json({
+      success: true,
+      invoice,
+    });
+
   } catch (err: any) {
     return NextResponse.json(
-      { success: false, error: err.message },
+      {
+        success: false,
+        error: err.message || 'Something went wrong',
+      },
       { status: 500 }
     );
   }
