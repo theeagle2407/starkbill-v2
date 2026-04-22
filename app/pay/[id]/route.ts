@@ -3,9 +3,9 @@ import { getInvoice } from '@/lib/invoice-store';
 
 export async function GET(
   req: Request,
-  context: { params: { id: string } }
+  { params }: { params: { id: string } }
 ) {
-  const invoice = getInvoice(context.params.id);
+  const invoice = getInvoice(params.id);
 
   if (!invoice) {
     return NextResponse.json(
