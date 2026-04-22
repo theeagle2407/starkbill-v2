@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
+import { payWithStarkzap } from '@/lib/starkzap';
 
 const CORAL = '#EC796B';
 const AMBER = '#F9A84D';
@@ -34,23 +35,21 @@ export default function PayPage() {
 
   const [copied, setCopied] = useState(false);
 
+  // ✅ FETCH FROM API (NOT SUPABASE)
   useEffect(() => {
     const loadInvoice = async () => {
       setLoadingInvoice(true);
 
-      const { data, error } = await supabase
-        .from('invoices')
-        .select('*')
-        .eq('id', id)
-        .single();
+      try {
+        const res = await fetch(`/api/invoices/${id}`);
+        if (!res.ok) throw new Error();
 
-      if (error || !data) {
+        const data = await res.json();
+        setInvoice(data);
+      } catch {
         setInvoice(null);
-        setLoadingInvoice(false);
-        return;
       }
 
-      setInvoice(data as Invoice);
       setLoadingInvoice(false);
     };
 
@@ -58,9 +57,7 @@ export default function PayPage() {
   }, [id]);
 
   const paymentLink =
-    typeof window !== 'undefined'
-      ? window.location.href
-      : '';
+    typeof window !== 'undefined' ? window.location.href : '';
 
   const copyLink = () => {
     navigator.clipboard.writeText(paymentLink);
@@ -68,6 +65,7 @@ export default function PayPage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  // ✅ PAYMENT HANDLER
   const handlePay = async () => {
     if (!invoice) return;
 
@@ -90,20 +88,22 @@ export default function PayPage() {
     setTxHash(result.txHash);
     setStatus('success');
 
-    await supabase
-      .from('invoices')
-      .update({
+    // ✅ UPDATE VIA API (NOT SUPABASE)
+    await fetch(`/api/invoices/${invoice.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
         status: 'paid',
         tx_hash: result.txHash,
-      })
-      .eq('id', invoice.id);
+      }),
+    });
 
     setLoading(false);
   };
 
   return (
     <div style={{ minHeight: '100vh', background: '#0A0A0F', color: TEXT }}>
-
+      
       {/* HEADER */}
       <header style={{
         padding: '20px 40px',
