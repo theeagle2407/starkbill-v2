@@ -27,17 +27,24 @@ export default function PayPage() {
 
   // Load invoice from URL (your current system)
   useEffect(() => {
-  const store = localStorage.getItem('starkbill_invoices');
-
-  if (!store) {
+  if (!id) {
     setInvoice(null);
     setLoadingInvoice(false);
     return;
   }
 
   try {
+    const store = localStorage.getItem('starkbill_invoices');
+
+    if (!store) {
+      setInvoice(null);
+      setLoadingInvoice(false);
+      return;
+    }
+
     const parsedStore = JSON.parse(store);
-    const found = parsedStore[id];
+
+    const found = parsedStore?.[id as string];
 
     if (found) {
       setInvoice(found);
