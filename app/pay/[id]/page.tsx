@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { payWithStarkzap } from '@/lib/starkzap';
-import { getInvoice } from '@/lib/invoice-store';
 
 const CORAL = '#EC796B';
 const AMBER = '#F9A84D';
@@ -25,15 +24,14 @@ export default function PayPage() {
 
   const [txHash, setTxHash] = useState<string | null>(null);
 
-  // Load invoice from URL (your current system)
+  // ✅ ONLY ONE CLEAN DATA LOADER
   useEffect(() => {
-  if (!id) {
-    setInvoice(null);
-    setLoadingInvoice(false);
-    return;
-  }
+    if (!id) {
+      setInvoice(null);
+      setLoadingInvoice(false);
+      return;
+    }
 
-  const load = () => {
     try {
       const store = localStorage.getItem('starkbill_invoices');
 
@@ -43,24 +41,17 @@ export default function PayPage() {
         return;
       }
 
-      const parsedStore = JSON.parse(store);
-
-      const found = parsedStore?.[id as string];
+      const parsed = JSON.parse(store);
+      const found = parsed?.[id as string];
 
       setInvoice(found || null);
     } catch (err) {
-      console.error('LocalStorage error:', err);
+      console.error('Error loading invoice:', err);
       setInvoice(null);
     }
 
     setLoadingInvoice(false);
-  };
-
-  // 🔥 IMPORTANT: delay until client is ready
-  if (typeof window !== 'undefined') {
-    load();
-  }
-}, [id]);
+  }, [id]);
 
   const handleCopy = async (text: string) => {
     await navigator.clipboard.writeText(text);
@@ -93,18 +84,25 @@ export default function PayPage() {
   return (
     <div style={{ minHeight: '100vh', background: '#0A0A0F', color: TEXT }}>
       {/* HEADER */}
-      <header style={{
-        padding: '20px 40px',
-        borderBottom: `1px solid ${BORDER}`,
-        display: 'flex',
-        justifyContent: 'space-between'
-      }}>
+      <header
+        style={{
+          padding: '20px 40px',
+          borderBottom: `1px solid ${BORDER}`,
+          display: 'flex',
+          justifyContent: 'space-between',
+        }}
+      >
         <Link href="/" style={{ fontWeight: 800, color: TEXT }}>
-          Stark<span style={{
-            background: `linear-gradient(135deg, ${CORAL}, ${AMBER})`,
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent'
-          }}>Bill</span>
+          Stark
+          <span
+            style={{
+              background: `linear-gradient(135deg, ${CORAL}, ${AMBER})`,
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+            }}
+          >
+            Bill
+          </span>
         </Link>
 
         <Link href="/dashboard" style={{ color: MUTED }}>
@@ -112,15 +110,21 @@ export default function PayPage() {
         </Link>
       </header>
 
-      <main style={{ maxWidth: '520px', margin: '60px auto', padding: '0 24px' }}>
-
-        <div style={{
-          background: CARD,
-          borderRadius: '16px',
-          border: `1px solid ${BORDER}`,
-          padding: '28px'
-        }}>
-
+      <main
+        style={{
+          maxWidth: '520px',
+          margin: '60px auto',
+          padding: '0 24px',
+        }}
+      >
+        <div
+          style={{
+            background: CARD,
+            borderRadius: '16px',
+            border: `1px solid ${BORDER}`,
+            padding: '28px',
+          }}
+        >
           <h2 style={{ fontSize: '18px', fontWeight: 800 }}>
             Invoice
           </h2>
@@ -146,12 +150,24 @@ export default function PayPage() {
                 {invoice.total} {invoice.currency}
               </div>
 
-              {/* EXTRA DATA (ADDED) */}
-              <div style={{ marginTop: '16px', fontSize: '12px', color: MUTED }}>
-  <div>From: {invoice.senderName?.trim() || '—'}</div>
-  <div>To: {invoice.clientName?.trim() || '—'}</div>
-  {invoice.dueDate && <div>Due: {invoice.dueDate}</div>}
-</div>
+              {/* EXTRA DATA */}
+              <div
+                style={{
+                  marginTop: '16px',
+                  fontSize: '12px',
+                  color: MUTED,
+                }}
+              >
+                <div>
+                  From: {invoice.senderName?.trim() || '—'}
+                </div>
+                <div>
+                  To: {invoice.clientName?.trim() || '—'}
+                </div>
+                {invoice.dueDate && (
+                  <div>Due: {invoice.dueDate}</div>
+                )}
+              </div>
 
               {/* WALLET */}
               <div style={{ marginTop: '20px' }}>
@@ -159,22 +175,26 @@ export default function PayPage() {
                   Pay To Wallet
                 </div>
 
-                <div style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  gap: '10px',
-                  background: 'rgba(255,255,255,0.03)',
-                  padding: '10px',
-                  borderRadius: '10px',
-                  marginTop: '6px'
-                }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    gap: '10px',
+                    background: 'rgba(255,255,255,0.03)',
+                    padding: '10px',
+                    borderRadius: '10px',
+                    marginTop: '6px',
+                  }}
+                >
                   <code style={{ fontSize: '12px' }}>
                     {invoice.senderWallet}
                   </code>
 
                   <button
-                    onClick={() => handleCopy(invoice.senderWallet)}
+                    onClick={() =>
+                      handleCopy(invoice.senderWallet)
+                    }
                     style={{
                       background: 'transparent',
                       border: `1px solid ${BORDER}`,
@@ -182,7 +202,7 @@ export default function PayPage() {
                       padding: '4px 8px',
                       borderRadius: '6px',
                       cursor: 'pointer',
-                      fontSize: '12px'
+                      fontSize: '12px',
                     }}
                   >
                     Copy
@@ -190,22 +210,26 @@ export default function PayPage() {
                 </div>
               </div>
 
-              {/* ITEMS (ADDED) */}
+              {/* ITEMS */}
               {invoice.items?.length > 0 && (
                 <div style={{ marginTop: '16px' }}>
-                  <div style={{ color: MUTED, fontSize: '12px' }}>
+                  <div
+                    style={{ color: MUTED, fontSize: '12px' }}
+                  >
                     Items
                   </div>
 
-                  {invoice.items.map((item: any, i: number) => (
-                    <div key={i} style={{ fontSize: '13px' }}>
-                      {item.description} × {item.quantity}
-                    </div>
-                  ))}
+                  {invoice.items.map(
+                    (item: any, i: number) => (
+                      <div key={i} style={{ fontSize: '13px' }}>
+                        {item.description} × {item.quantity}
+                      </div>
+                    )
+                  )}
                 </div>
               )}
 
-              {/* PAYMENT BUTTON */}
+              {/* PAY BUTTON */}
               <button
                 onClick={handlePay}
                 disabled={loading}
@@ -220,7 +244,7 @@ export default function PayPage() {
                   color: '#fff',
                   border: 'none',
                   fontWeight: 700,
-                  cursor: 'pointer'
+                  cursor: 'pointer',
                 }}
               >
                 {loading ? 'Processing...' : 'Pay'}
@@ -228,13 +252,21 @@ export default function PayPage() {
 
               {/* STATUS */}
               {status === 'success' && (
-                <p style={{ marginTop: '12px', color: '#4ADE80' }}>
+                <p
+                  style={{
+                    marginTop: '12px',
+                    color: '#4ADE80',
+                  }}
+                >
                   Payment successful{' '}
                   {txHash && (
                     <a
                       href={`https://sepolia.starkscan.co/tx/${txHash}`}
                       target="_blank"
-                      style={{ color: AMBER, marginLeft: '6px' }}
+                      style={{
+                        color: AMBER,
+                        marginLeft: '6px',
+                      }}
                     >
                       View transaction
                     </a>
@@ -243,7 +275,12 @@ export default function PayPage() {
               )}
 
               {status === 'failed' && (
-                <p style={{ marginTop: '12px', color: '#F87171' }}>
+                <p
+                  style={{
+                    marginTop: '12px',
+                    color: '#F87171',
+                  }}
+                >
                   Payment failed
                 </p>
               )}
