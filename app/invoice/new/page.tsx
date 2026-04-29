@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import type { InvoiceItem, Currency } from '@/lib/types';
+import { createInvoice } from '@/lib/invoice-store';
 
 const CORAL = '#EC796B';
 const AMBER = '#F9A84D';
@@ -127,8 +128,8 @@ export default function NewInvoicePage() {
         );
       }
 
-      const encoded = encodeURIComponent(JSON.stringify({
-  invoiceId,
+      createInvoice({
+  id: invoiceId,
   invoiceNumber,
   senderName,
   senderEmail,
@@ -139,6 +140,18 @@ export default function NewInvoicePage() {
   currency,
   total,
   dueDate,
+  notes,
+  status: 'pending'
+});
+
+const encoded = encodeURIComponent(JSON.stringify({
+  total,
+  currency,
+  senderWallet,
+  senderName,
+  clientName,
+  dueDate,
+  items,
   notes
 }));
 

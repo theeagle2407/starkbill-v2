@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { payWithStarkzap } from '@/lib/starkzap';
+import { getInvoice } from '@/lib/invoice-store';
 
 const CORAL = '#EC796B';
 const AMBER = '#F9A84D';
@@ -26,29 +27,30 @@ export default function PayPage() {
 
   // Load invoice from URL (your current system)
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const data = params.get('data');
+  const store = localStorage.getItem('starkbill_invoices');
 
-    if (data) {
+  if (!store) {
+    setInvoice(null);
+    setLoadingInvoice(false);
+    return;
+  }
+
   try {
-    const cleaned = decodeURIComponent(data);
-    const parsed = JSON.parse(cleaned);
+    const parsedStore = JSON.parse(store);
+    const found = parsedStore[id];
 
-    setInvoice({
-      ...parsed,
-      senderName: parsed.senderName || '',
-      clientName: parsed.clientName || '',
-      items: parsed.items || []
-    });
+    if (found) {
+      setInvoice(found);
+    } else {
+      setInvoice(null);
+    }
   } catch (err) {
-    console.error('Invoice parse error:', err);
+    console.error('LocalStorage error:', err);
     setInvoice(null);
   }
-} else {
-  setInvoice(null);
-}
 
-setLoadingInvoice(false);
+  setLoadingInvoice(false);
+}, [id]);
   }, []);
 
   const handleCopy = async (text: string) => {
@@ -137,8 +139,8 @@ setLoadingInvoice(false);
 
               {/* EXTRA DATA (ADDED) */}
               <div style={{ marginTop: '16px', fontSize: '12px', color: MUTED }}>
-  <div>From: {invoice.senderName || 'Not provided'}</div>
-  <div>To: {invoice.clientName || 'Not provided'}</div>
+  <div>From: {invoice.senderName?.trim() || '—'}</div>
+  <div>To: {invoice.clientName?.trim() || '—'}</div>
   {invoice.dueDate && <div>Due: {invoice.dueDate}</div>}
 </div>
 
