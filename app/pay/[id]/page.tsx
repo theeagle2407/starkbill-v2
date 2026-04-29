@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { payWithStarkzap } from '@/lib/starkzap';
 
@@ -12,6 +13,8 @@ const TEXT = '#F0F0F5';
 const CARD = 'rgba(255,255,255,0.04)';
 
 export default function PayPage() {
+  const { id } = useParams<{ id: string }>();
+
   const [invoice, setInvoice] = useState<any>(null);
   const [loadingInvoice, setLoadingInvoice] = useState(true);
 
@@ -21,7 +24,7 @@ export default function PayPage() {
 
   const [txHash, setTxHash] = useState<string | null>(null);
 
-  // ✅ REPLACED FETCH LOGIC WITH URLSearchParams
+  // Load invoice from URL (your current system)
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const data = params.get('data');
@@ -39,6 +42,10 @@ export default function PayPage() {
 
     setLoadingInvoice(false);
   }, []);
+
+  const handleCopy = async (text: string) => {
+    await navigator.clipboard.writeText(text);
+  };
 
   const handlePay = async () => {
     if (!invoice) return;
@@ -66,6 +73,7 @@ export default function PayPage() {
 
   return (
     <div style={{ minHeight: '100vh', background: '#0A0A0F', color: TEXT }}>
+      {/* HEADER */}
       <header style={{
         padding: '20px 40px',
         borderBottom: `1px solid ${BORDER}`,
@@ -86,14 +94,16 @@ export default function PayPage() {
       </header>
 
       <main style={{ maxWidth: '520px', margin: '60px auto', padding: '0 24px' }}>
+
         <div style={{
           background: CARD,
           borderRadius: '16px',
           border: `1px solid ${BORDER}`,
           padding: '28px'
         }}>
+
           <h2 style={{ fontSize: '18px', fontWeight: 800 }}>
-            Invoice Payment
+            Invoice
           </h2>
 
           {loadingInvoice && (
@@ -108,14 +118,53 @@ export default function PayPage() {
 
           {!loadingInvoice && invoice && (
             <>
+              {/* AMOUNT */}
               <div style={{ marginTop: '16px', color: MUTED }}>
-                Amount
+                Total Amount
               </div>
 
-              <div style={{ fontSize: '22px', fontWeight: 800 }}>
+              <div style={{ fontSize: '26px', fontWeight: 900 }}>
                 {invoice.total} {invoice.currency}
               </div>
 
+              {/* WALLET */}
+              <div style={{ marginTop: '20px' }}>
+                <div style={{ color: MUTED, fontSize: '12px' }}>
+                  Pay To Wallet
+                </div>
+
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  gap: '10px',
+                  background: 'rgba(255,255,255,0.03)',
+                  padding: '10px',
+                  borderRadius: '10px',
+                  marginTop: '6px'
+                }}>
+                  <code style={{ fontSize: '12px' }}>
+                    {invoice.senderWallet}
+                  </code>
+
+                  <button
+                    onClick={() => handleCopy(invoice.senderWallet)}
+                    style={{
+                      background: 'transparent',
+                      border: `1px solid ${BORDER}`,
+                      color: TEXT,
+                      padding: '4px 8px',
+                      borderRadius: '6px',
+                      cursor: 'pointer',
+                      fontSize: '12px'
+                    }}
+                  >
+                    Copy
+                  </button>
+                </div>
+              </div>
+
+              {/* PAYMENT BUTTON */}
               <button
                 onClick={handlePay}
                 disabled={loading}
@@ -136,6 +185,7 @@ export default function PayPage() {
                 {loading ? 'Processing...' : 'Pay with Starkzap'}
               </button>
 
+              {/* STATUS */}
               {status === 'success' && (
                 <p style={{ marginTop: '12px', color: '#4ADE80' }}>
                   Payment successful{' '}
@@ -143,8 +193,7 @@ export default function PayPage() {
                     <a
                       href={`https://sepolia.starkscan.co/tx/${txHash}`}
                       target="_blank"
-                      rel="noreferrer"
-                      style={{ marginLeft: '6px', color: AMBER }}
+                      style={{ color: AMBER, marginLeft: '6px' }}
                     >
                       View transaction
                     </a>
