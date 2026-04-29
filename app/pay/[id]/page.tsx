@@ -51,7 +51,6 @@ export default function PayPage() {
 
   setLoadingInvoice(false);
 }, [id]);
-  }, []);
 
   const handleCopy = async (text: string) => {
     await navigator.clipboard.writeText(text);
