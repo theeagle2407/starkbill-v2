@@ -128,9 +128,18 @@ export default function NewInvoicePage() {
       }
 
       const encoded = encodeURIComponent(JSON.stringify({
-  total,
+  invoiceId,
+  invoiceNumber,
+  senderName,
+  senderEmail,
+  senderWallet,
+  clientName,
+  clientEmail,
+  items,
   currency,
-  senderWallet
+  total,
+  dueDate,
+  notes
 }));
 
 router.push(`/pay/${invoiceId}?data=${encoded}`);

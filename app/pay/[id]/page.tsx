@@ -127,6 +127,13 @@ export default function PayPage() {
                 {invoice.total} {invoice.currency}
               </div>
 
+              {/* EXTRA DATA (ADDED) */}
+              <div style={{ marginTop: '16px', fontSize: '12px', color: MUTED }}>
+                <div>From: {invoice.senderName}</div>
+                <div>To: {invoice.clientName}</div>
+                {invoice.dueDate && <div>Due: {invoice.dueDate}</div>}
+              </div>
+
               {/* WALLET */}
               <div style={{ marginTop: '20px' }}>
                 <div style={{ color: MUTED, fontSize: '12px' }}>
@@ -164,6 +171,21 @@ export default function PayPage() {
                 </div>
               </div>
 
+              {/* ITEMS (ADDED) */}
+              {invoice.items?.length > 0 && (
+                <div style={{ marginTop: '16px' }}>
+                  <div style={{ color: MUTED, fontSize: '12px' }}>
+                    Items
+                  </div>
+
+                  {invoice.items.map((item: any, i: number) => (
+                    <div key={i} style={{ fontSize: '13px' }}>
+                      {item.description} × {item.quantity}
+                    </div>
+                  ))}
+                </div>
+              )}
+
               {/* PAYMENT BUTTON */}
               <button
                 onClick={handlePay}
@@ -182,7 +204,7 @@ export default function PayPage() {
                   cursor: 'pointer'
                 }}
               >
-                {loading ? 'Processing...' : 'Pay with Starkzap'}
+                {loading ? 'Processing...' : 'Pay'}
               </button>
 
               {/* STATUS */}
