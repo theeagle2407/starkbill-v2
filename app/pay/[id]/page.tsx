@@ -30,17 +30,25 @@ export default function PayPage() {
     const data = params.get('data');
 
     if (data) {
-      try {
-        const parsed = JSON.parse(decodeURIComponent(data));
-        setInvoice(parsed);
-      } catch {
-        setInvoice(null);
-      }
-    } else {
-      setInvoice(null);
-    }
+  try {
+    const cleaned = decodeURIComponent(data);
+    const parsed = JSON.parse(cleaned);
 
-    setLoadingInvoice(false);
+    setInvoice({
+      ...parsed,
+      senderName: parsed.senderName || '',
+      clientName: parsed.clientName || '',
+      items: parsed.items || []
+    });
+  } catch (err) {
+    console.error('Invoice parse error:', err);
+    setInvoice(null);
+  }
+} else {
+  setInvoice(null);
+}
+
+setLoadingInvoice(false);
   }, []);
 
   const handleCopy = async (text: string) => {
@@ -129,10 +137,10 @@ export default function PayPage() {
 
               {/* EXTRA DATA (ADDED) */}
               <div style={{ marginTop: '16px', fontSize: '12px', color: MUTED }}>
-                <div>From: {invoice.senderName}</div>
-                <div>To: {invoice.clientName}</div>
-                {invoice.dueDate && <div>Due: {invoice.dueDate}</div>}
-              </div>
+  <div>From: {invoice.senderName || 'Not provided'}</div>
+  <div>To: {invoice.clientName || 'Not provided'}</div>
+  {invoice.dueDate && <div>Due: {invoice.dueDate}</div>}
+</div>
 
               {/* WALLET */}
               <div style={{ marginTop: '20px' }}>
