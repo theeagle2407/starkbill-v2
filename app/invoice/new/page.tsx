@@ -133,12 +133,6 @@ export default function NewInvoicePage() {
   senderWallet
 }));
 
-const encoded = encodeURIComponent(JSON.stringify({
-  total,
-  currency,
-  senderWallet
-}));
-
 router.push(`/pay/${invoiceId}?data=${encoded}`);
     } catch (err: any) {
       setError(err.message || 'Failed to create invoice');
