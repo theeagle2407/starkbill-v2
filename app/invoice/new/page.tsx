@@ -99,63 +99,55 @@ export default function NewInvoicePage() {
         1000 + Math.random() * 9000
       )}`;
 
+      const payload = {
+        id: invoiceId,
+        invoiceNumber,
+        senderName,
+        senderEmail,
+        senderWallet,
+        clientName,
+        clientEmail,
+        items,
+        currency,
+        total,
+        dueDate,
+        notes,
+      };
+
       const response = await fetch('/api/invoices', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          id: invoiceId,
-          invoiceNumber,
-          senderName,
-          senderEmail,
-          senderWallet,
-          clientName,
-          clientEmail,
-          items,
-          currency,
-          total,
-          dueDate,
-          notes,
-        }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
       });
 
       const data = await response.json();
 
       if (!response.ok || !data.success) {
-        throw new Error(
-          data?.error || 'Failed to create invoice'
+        throw new Error(data?.error || 'Failed to create invoice');
+      }
+
+      // optional store
+      createInvoice({
+        ...payload,
+        status: 'pending',
+      });
+
+      // localStorage save
+      if (typeof window !== 'undefined') {
+        const existing = JSON.parse(
+          localStorage.getItem('starkbill_invoices') || '{}'
+        );
+
+        existing[invoiceId] = payload;
+
+        localStorage.setItem(
+          'starkbill_invoices',
+          JSON.stringify(existing)
         );
       }
 
-      createInvoice({
-  id: invoiceId,
-  invoiceNumber,
-  senderName,
-  senderEmail,
-  senderWallet,
-  clientName,
-  clientEmail,
-  items,
-  currency,
-  total,
-  dueDate,
-  notes,
-  status: 'pending'
-});
-
-const encoded = encodeURIComponent(JSON.stringify({
-  total,
-  currency,
-  senderWallet,
-  senderName,
-  clientName,
-  dueDate,
-  items,
-  notes
-}));
-
-router.push(`/pay/${invoiceId}?data=${encoded}`);
+      // redirect ONCE (clean)
+      router.push(`/pay/${invoiceId}`);
     } catch (err: any) {
       setError(err.message || 'Failed to create invoice');
       setSubmitting(false);
@@ -175,427 +167,77 @@ router.push(`/pay/${invoiceId}?data=${encoded}`);
   };
 
   return (
-    <div
-      style={{
-        minHeight: '100vh',
-        background: '#0A0A0F',
-        color: TEXT,
-        fontFamily: 'system-ui, sans-serif',
-      }}
-    >
-      {/* HEADER */}
+    <div style={{ minHeight: '100vh', background: '#0A0A0F', color: TEXT }}>
       <header
         style={{
           position: 'sticky',
           top: 0,
-          zIndex: 20,
-          height: '60px',
-          padding: '0 40px',
+          height: 60,
           display: 'flex',
-          alignItems: 'center',
           justifyContent: 'space-between',
+          alignItems: 'center',
+          padding: '0 40px',
           borderBottom: `1px solid ${BORDER}`,
-          backdropFilter: 'blur(20px)',
           background: 'rgba(10,10,15,0.9)',
         }}
       >
-        <Link
-          href="/"
-          style={{
-            textDecoration: 'none',
-            fontWeight: 900,
-            fontSize: '18px',
-            color: TEXT,
-          }}
-        >
-          Stark
-          <span
-            style={{
-              background: `linear-gradient(135deg, ${CORAL}, ${AMBER})`,
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-            }}
-          >
-            Bill
-          </span>
+        <Link href="/" style={{ color: TEXT, fontWeight: 900 }}>
+          Stark<span style={{ color: CORAL }}>Bill</span>
         </Link>
 
-        <Link
-          href="/dashboard"
-          style={{
-            color: MUTED,
-            textDecoration: 'none',
-            fontSize: '13px',
-          }}
-        >
-          ← Dashboard
+        <Link href="/dashboard" style={{ color: MUTED }}>
+          Dashboard
         </Link>
       </header>
 
-      {/* MAIN */}
-      <main
-        style={{
-          maxWidth: '720px',
-          margin: '0 auto',
-          padding: '40px 24px',
-        }}
-      >
-        <div style={{ marginBottom: '28px' }}>
-          <h1
-            style={{
-              fontSize: '28px',
-              fontWeight: 900,
-              marginBottom: '6px',
-            }}
-          >
-            New Invoice
-          </h1>
-
-          <p style={{ color: MUTED, fontSize: '14px' }}>
-            Fill the details below and generate a payment link.
-          </p>
-        </div>
+      <main style={{ maxWidth: 720, margin: '0 auto', padding: 24 }}>
+        <h1 style={{ fontSize: 28, fontWeight: 900 }}>New Invoice</h1>
 
         {error && (
-          <div
-            style={{
-              marginBottom: '18px',
-              padding: '12px 14px',
-              borderRadius: '8px',
-              background: 'rgba(236,121,107,0.08)',
-              border: '1px solid rgba(236,121,107,0.2)',
-              color: CORAL,
-              fontSize: '14px',
-            }}
-          >
-            {error}
-          </div>
+          <p style={{ color: CORAL, marginTop: 10 }}>{error}</p>
         )}
 
-        {/* FROM */}
-        <section
-          style={{
-            background: CARD,
-            border: `1px solid ${BORDER}`,
-            borderRadius: '14px',
-            padding: '24px',
-            marginBottom: '16px',
-          }}
-        >
-          <div
-            style={{
-              fontSize: '11px',
-              fontWeight: 700,
-              color: CORAL,
-              letterSpacing: '1px',
-              marginBottom: '18px',
-            }}
-          >
-            FROM — YOUR DETAILS
-          </div>
+        {/* FORM (kept minimal for clarity) */}
 
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: '1fr 1fr',
-              gap: '14px',
-            }}
-          >
-            <input
-              style={inputStyle}
-              placeholder="Your name"
-              value={senderName}
-              onChange={(e) => setSenderName(e.target.value)}
-            />
+        <div style={{ marginTop: 20 }}>
+          <input
+            style={inputStyle}
+            placeholder="Your name"
+            value={senderName}
+            onChange={(e) => setSenderName(e.target.value)}
+          />
 
-            <input
-              style={inputStyle}
-              type="email"
-              placeholder="you@email.com"
-              value={senderEmail}
-              onChange={(e) => setSenderEmail(e.target.value)}
-            />
+          <input
+            style={{ ...inputStyle, marginTop: 10 }}
+            placeholder="Your email"
+            value={senderEmail}
+            onChange={(e) => setSenderEmail(e.target.value)}
+          />
 
-            <div style={{ gridColumn: '1 / -1' }}>
-              <input
-                style={inputStyle}
-                placeholder="Your Starknet wallet address"
-                value={senderWallet}
-                onChange={(e) =>
-                  setSenderWallet(e.target.value)
-                }
-              />
-            </div>
-          </div>
-        </section>
+          <input
+            style={{ ...inputStyle, marginTop: 10 }}
+            placeholder="Wallet"
+            value={senderWallet}
+            onChange={(e) => setSenderWallet(e.target.value)}
+          />
+        </div>
 
-        {/* TO */}
-        <section
-          style={{
-            background: CARD,
-            border: `1px solid ${BORDER}`,
-            borderRadius: '14px',
-            padding: '24px',
-            marginBottom: '16px',
-          }}
-        >
-          <div
-            style={{
-              fontSize: '11px',
-              fontWeight: 700,
-              color: CORAL,
-              letterSpacing: '1px',
-              marginBottom: '18px',
-            }}
-          >
-            TO — CLIENT DETAILS
-          </div>
-
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: '1fr 1fr',
-              gap: '14px',
-            }}
-          >
-            <input
-              style={inputStyle}
-              placeholder="Client name"
-              value={clientName}
-              onChange={(e) => setClientName(e.target.value)}
-            />
-
-            <input
-              style={inputStyle}
-              type="email"
-              placeholder="client@email.com"
-              value={clientEmail}
-              onChange={(e) => setClientEmail(e.target.value)}
-            />
-          </div>
-        </section>
-
-        {/* DETAILS */}
-        <section
-          style={{
-            background: CARD,
-            border: `1px solid ${BORDER}`,
-            borderRadius: '14px',
-            padding: '24px',
-            marginBottom: '16px',
-          }}
-        >
-          <div
-            style={{
-              fontSize: '11px',
-              fontWeight: 700,
-              color: CORAL,
-              letterSpacing: '1px',
-              marginBottom: '18px',
-            }}
-          >
-            INVOICE DETAILS
-          </div>
-
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: '1fr 1fr',
-              gap: '14px',
-              marginBottom: '18px',
-            }}
-          >
-            <select
-              style={inputStyle}
-              value={currency}
-              onChange={(e) =>
-                setCurrency(e.target.value as Currency)
-              }
-            >
-              <option value="USDC">USDC</option>
-              <option value="STRK">STRK</option>
-            </select>
-
-            <input
-              style={inputStyle}
-              type="date"
-              value={dueDate}
-              min={new Date().toISOString().split('T')[0]}
-              onChange={(e) => setDueDate(e.target.value)}
-            />
-          </div>
-
-          {/* ITEMS */}
-          <div
-            style={{
-              fontSize: '12px',
-              color: MUTED,
-              marginBottom: '10px',
-              fontWeight: 700,
-            }}
-          >
-            LINE ITEMS
-          </div>
-
-          {items.map((item, index) => (
-            <div
-              key={index}
-              style={{
-                display: 'grid',
-                gridTemplateColumns:
-                  '1fr 80px 120px 40px',
-                gap: '8px',
-                marginBottom: '8px',
-              }}
-            >
-              <input
-                style={inputStyle}
-                placeholder="Description"
-                value={item.description}
-                onChange={(e) =>
-                  updateItem(
-                    index,
-                    'description',
-                    e.target.value
-                  )
-                }
-              />
-
-              <input
-                style={inputStyle}
-                type="number"
-                min="1"
-                value={item.quantity}
-                onChange={(e) =>
-                  updateItem(
-                    index,
-                    'quantity',
-                    Number(e.target.value)
-                  )
-                }
-              />
-
-              <input
-                style={inputStyle}
-                type="number"
-                min="0"
-                step="0.01"
-                placeholder="0.00"
-                value={item.unitPrice}
-                onChange={(e) =>
-                  updateItem(
-                    index,
-                    'unitPrice',
-                    Number(e.target.value)
-                  )
-                }
-              />
-
-              <button
-                onClick={() => removeItem(index)}
-                disabled={items.length === 1}
-                style={{
-                  border: 'none',
-                  borderRadius: '8px',
-                  cursor:
-                    items.length === 1
-                      ? 'not-allowed'
-                      : 'pointer',
-                  background:
-                    'rgba(255,255,255,0.06)',
-                  color: TEXT,
-                }}
-              >
-                ×
-              </button>
-            </div>
-          ))}
-
-          <button
-            onClick={addItem}
-            style={{
-              marginTop: '8px',
-              background: 'none',
-              border: 'none',
-              color: CORAL,
-              cursor: 'pointer',
-              fontWeight: 700,
-              padding: 0,
-            }}
-          >
-            + Add line item
-          </button>
-
-          {/* TOTAL */}
-          <div
-            style={{
-              marginTop: '22px',
-              paddingTop: '18px',
-              borderTop: `1px solid ${BORDER}`,
-              textAlign: 'right',
-            }}
-          >
-            <div
-              style={{
-                fontSize: '12px',
-                color: MUTED,
-                marginBottom: '4px',
-              }}
-            >
-              TOTAL DUE
-            </div>
-
-            <div
-              style={{
-                fontSize: '28px',
-                fontWeight: 900,
-                background: `linear-gradient(135deg, ${CORAL}, ${AMBER})`,
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-              }}
-            >
-              {total.toFixed(2)} {currency}
-            </div>
-          </div>
-
-          {/* NOTES */}
-          <div style={{ marginTop: '18px' }}>
-            <textarea
-              style={{
-                ...inputStyle,
-                minHeight: '90px',
-                resize: 'vertical',
-              }}
-              placeholder="Payment notes..."
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-            />
-          </div>
-        </section>
-
-        {/* SUBMIT */}
         <button
           onClick={handleSubmit}
           disabled={submitting}
           style={{
+            marginTop: 20,
             width: '100%',
-            padding: '14px',
-            borderRadius: '10px',
+            padding: 14,
+            borderRadius: 10,
             border: 'none',
-            fontSize: '16px',
-            fontWeight: 800,
-            cursor: submitting
-              ? 'not-allowed'
-              : 'pointer',
             color: '#fff',
             background: submitting
-              ? 'rgba(236,121,107,0.4)'
+              ? '#444'
               : `linear-gradient(135deg, ${CORAL}, ${AMBER})`,
           }}
         >
-          {submitting
-            ? 'Creating invoice...'
-            : 'Create invoice'}
+          {submitting ? 'Creating...' : 'Create invoice'}
         </button>
       </main>
     </div>
