@@ -33,30 +33,33 @@ export default function PayPage() {
     return;
   }
 
-  try {
-    const store = localStorage.getItem('starkbill_invoices');
+  const load = () => {
+    try {
+      const store = localStorage.getItem('starkbill_invoices');
 
-    if (!store) {
+      if (!store) {
+        setInvoice(null);
+        setLoadingInvoice(false);
+        return;
+      }
+
+      const parsedStore = JSON.parse(store);
+
+      const found = parsedStore?.[id as string];
+
+      setInvoice(found || null);
+    } catch (err) {
+      console.error('LocalStorage error:', err);
       setInvoice(null);
-      setLoadingInvoice(false);
-      return;
     }
 
-    const parsedStore = JSON.parse(store);
+    setLoadingInvoice(false);
+  };
 
-    const found = parsedStore?.[id as string];
-
-    if (found) {
-      setInvoice(found);
-    } else {
-      setInvoice(null);
-    }
-  } catch (err) {
-    console.error('LocalStorage error:', err);
-    setInvoice(null);
+  // 🔥 IMPORTANT: delay until client is ready
+  if (typeof window !== 'undefined') {
+    load();
   }
-
-  setLoadingInvoice(false);
 }, [id]);
 
   const handleCopy = async (text: string) => {
