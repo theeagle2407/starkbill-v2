@@ -1,12 +1,15 @@
 import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
 import { getInvoice } from '@/lib/invoice-store';
 
 export async function GET(
-  req: Request,
-  { params }: { params: { id: string } }
+  req: NextRequest,
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const invoice = getInvoice(params.id);
+    const { id } = await context.params;
+
+    const invoice = getInvoice(id);
 
     if (!invoice) {
       return NextResponse.json(
