@@ -15,18 +15,17 @@ type Invoice = {
   tx_hash?: string;
 };
 
-const KEY = 'starkbill_invoices';
+const STORAGE_KEY = 'starkbill_invoices';
 
 function getAll(): Record<string, Invoice> {
   if (typeof window === 'undefined') return {};
-
-  const raw = localStorage.getItem(KEY);
+  const raw = localStorage.getItem(STORAGE_KEY);
   return raw ? JSON.parse(raw) : {};
 }
 
 function saveAll(data: Record<string, Invoice>) {
   if (typeof window === 'undefined') return;
-  localStorage.setItem(KEY, JSON.stringify(data));
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
 }
 
 export function createInvoice(invoice: Invoice) {
@@ -43,14 +42,8 @@ export function getInvoice(id: string) {
 
 export function updateInvoice(id: string, data: Partial<Invoice>) {
   const store = getAll();
-
   if (!store[id]) return null;
-
-  store[id] = {
-    ...store[id],
-    ...data,
-  };
-
+  store[id] = { ...store[id], ...data };
   saveAll(store);
   return store[id];
 }
