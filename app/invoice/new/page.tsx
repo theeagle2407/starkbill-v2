@@ -127,7 +127,19 @@ export default function NewInvoicePage() {
         );
       }
 
-      router.push(`/pay/${invoiceId}`);
+      const encoded = encodeURIComponent(JSON.stringify({
+  total,
+  currency,
+  senderWallet
+}));
+
+const encoded = encodeURIComponent(JSON.stringify({
+  total,
+  currency,
+  senderWallet
+}));
+
+router.push(`/pay/${invoiceId}?data=${encoded}`);
     } catch (err: any) {
       setError(err.message || 'Failed to create invoice');
       setSubmitting(false);

@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { payWithStarkzap } from '@/lib/starkzap';
 
@@ -13,8 +12,6 @@ const TEXT = '#F0F0F5';
 const CARD = 'rgba(255,255,255,0.04)';
 
 export default function PayPage() {
-  const { id } = useParams<{ id: string }>();
-
   const [invoice, setInvoice] = useState<any>(null);
   const [loadingInvoice, setLoadingInvoice] = useState(true);
 
@@ -24,27 +21,24 @@ export default function PayPage() {
 
   const [txHash, setTxHash] = useState<string | null>(null);
 
-  // ✅ FETCH FROM API (THIS FIXES YOUR ISSUE)
+  // ✅ REPLACED FETCH LOGIC WITH URLSearchParams
   useEffect(() => {
-    const load = async () => {
-      try {
-        const res = await fetch(`/api/invoices/${id}`);
-        const data = await res.json();
+    const params = new URLSearchParams(window.location.search);
+    const data = params.get('data');
 
-        if (!res.ok || !data.success) {
-          setInvoice(null);
-        } else {
-          setInvoice(data.invoice);
-        }
+    if (data) {
+      try {
+        const parsed = JSON.parse(decodeURIComponent(data));
+        setInvoice(parsed);
       } catch {
         setInvoice(null);
       }
+    } else {
+      setInvoice(null);
+    }
 
-      setLoadingInvoice(false);
-    };
-
-    if (id) load();
-  }, [id]);
+    setLoadingInvoice(false);
+  }, []);
 
   const handlePay = async () => {
     if (!invoice) return;
@@ -144,11 +138,13 @@ export default function PayPage() {
 
               {status === 'success' && (
                 <p style={{ marginTop: '12px', color: '#4ADE80' }}>
-                  Payment successful
+                  Payment successful{' '}
                   {txHash && (
                     <a
                       href={`https://sepolia.starkscan.co/tx/${txHash}`}
                       target="_blank"
+                      rel="noreferrer"
+                      style={{ marginLeft: '6px', color: AMBER }}
                     >
                       View transaction
                     </a>
